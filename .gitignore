@@ -34,4 +34,4 @@
 .env
 .vscode/
 venv/
-src/test.cpp
+test/

